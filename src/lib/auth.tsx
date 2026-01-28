@@ -4,12 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 
 type AppRole = "student" | "staff" | "admin";
 
+interface SignupMetadata {
+  full_name: string;
+  roll_number?: string;
+  employee_id?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
   loading: boolean;
-  signUp: (email: string, password: string, role: AppRole) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, role: AppRole, metadata: SignupMetadata) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -77,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, selectedRole: AppRole) => {
+  const signUp = async (email: string, password: string, selectedRole: AppRole, metadata: SignupMetadata) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -87,6 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: redirectUrl,
         data: {
           role: selectedRole,
+          full_name: metadata.full_name,
+          roll_number: metadata.roll_number,
+          employee_id: metadata.employee_id,
         },
       },
     });

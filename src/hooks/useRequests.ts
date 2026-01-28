@@ -22,6 +22,9 @@ export interface Request {
   };
   profile?: {
     email: string;
+    full_name: string | null;
+    roll_number: string | null;
+    employee_id: string | null;
   };
 }
 
@@ -48,19 +51,19 @@ export function useRequests(viewType: "own" | "all" = "own") {
 
       if (error) throw error;
 
-      // Fetch user emails for staff/admin views
+      // Fetch user profiles for staff/admin views with extended fields
       if (viewType === "all" && data && data.length > 0) {
         const userIds = [...new Set(data.map((r) => r.user_id))];
         const { data: profiles } = await supabase
           .from("profiles")
-          .select("id, email")
+          .select("id, email, full_name, roll_number, employee_id")
           .in("id", userIds);
 
         const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
 
         return data.map((r) => ({
           ...r,
-          profile: profileMap.get(r.user_id) || { email: "Unknown" },
+          profile: profileMap.get(r.user_id) || { email: "Unknown", full_name: null, roll_number: null, employee_id: null },
         })) as Request[];
       }
 
@@ -90,6 +93,19 @@ export function useRequests(viewType: "own" | "all" = "own") {
       }).select().single();
 
       if (error) throw error;
+
+      // Trigger email notification to staff (fire and forget)
+      try {
+        await supabase.functions.invoke("send-notification", {
+          body: {
+            type: "new_request",
+            requestId: data.id,
+          },
+        });
+      } catch (e) {
+        console.error("Failed to send notification:", e);
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -159,6 +175,20 @@ export function useRequests(viewType: "own" | "all" = "own") {
         .single();
 
       if (error) throw error;
+
+      // Trigger email notification to student (fire and forget)
+      try {
+        await supabase.functions.invoke("send-notification", {
+          body: {
+            type: status === "approved" ? "request_approved" : "request_rejected",
+            requestId: data.id,
+            rejectionReason: rejectionReason,
+          },
+        });
+      } catch (e) {
+        console.error("Failed to send notification:", e);
+      }
+
       return data;
     },
     onSuccess: (_, { status }) => {

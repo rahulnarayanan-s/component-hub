@@ -30,12 +30,23 @@ export default function Auth() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [selectedRole, setSelectedRole] = useState<AppRole>("student");
+  
+  // Role-specific fields
+  const [fullName, setFullName] = useState("");
+  const [rollNumber, setRollNumber] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
 
   useEffect(() => {
     if (user && !authLoading) {
       navigate("/");
     }
   }, [user, authLoading, navigate]);
+
+  // Reset role-specific fields when role changes
+  useEffect(() => {
+    setRollNumber("");
+    setEmployeeId("");
+  }, [selectedRole]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +84,7 @@ export default function Auth() {
     setError(null);
     setIsLoading(true);
 
+    // Basic validation
     try {
       emailSchema.parse(signupEmail);
       passwordSchema.parse(signupPassword);
@@ -90,13 +102,39 @@ export default function Auth() {
       return;
     }
 
-    const { error } = await signUp(signupEmail, signupPassword, selectedRole);
+    // Validate full name
+    if (!fullName.trim()) {
+      setError("Full name is required.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Role-specific validation
+    if (selectedRole === "student" && !rollNumber.trim()) {
+      setError("Roll number is required for students.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (selectedRole === "staff" && !employeeId.trim()) {
+      setError("Employee ID is required for staff.");
+      setIsLoading(false);
+      return;
+    }
+
+    const { error } = await signUp(signupEmail, signupPassword, selectedRole, {
+      full_name: fullName.trim(),
+      roll_number: selectedRole === "student" ? rollNumber.trim() : undefined,
+      employee_id: selectedRole === "staff" ? employeeId.trim() : undefined,
+    });
     
     if (error) {
       if (error.message.includes("User already registered")) {
         setError("An account with this email already exists. Please sign in.");
       } else if (error.message.includes("Password")) {
         setError("Password must be at least 6 characters.");
+      } else if (error.message.includes("roll_number") || error.message.includes("employee_id")) {
+        setError("This ID is already registered. Please use a different one.");
       } else {
         setError("Unable to create account. Please try again.");
       }
@@ -234,10 +272,60 @@ export default function Auth() {
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Choose your role in the lab
-                    </p>
                   </div>
+                  
+                  {/* Common field: Full Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="full-name">Full Name</Label>
+                    <Input
+                      id="full-name"
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+
+                  {/* Student-specific field */}
+                  {selectedRole === "student" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="roll-number">Roll Number</Label>
+                      <Input
+                        id="roll-number"
+                        type="text"
+                        placeholder="e.g., 2024CS001"
+                        value={rollNumber}
+                        onChange={(e) => setRollNumber(e.target.value)}
+                        disabled={isLoading}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Your unique student roll number
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Staff-specific field */}
+                  {selectedRole === "staff" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="employee-id">Employee ID</Label>
+                      <Input
+                        id="employee-id"
+                        type="text"
+                        placeholder="e.g., EMP-2024-001"
+                        value={employeeId}
+                        onChange={(e) => setEmployeeId(e.target.value)}
+                        disabled={isLoading}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Your unique employee ID
+                      </p>
+                    </div>
+                  )}
+
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
                       <>
