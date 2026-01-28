@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useComponents } from "@/hooks/useComponents";
 import { useRequests } from "@/hooks/useRequests";
+import { useAdminStats } from "@/hooks/useAdminStats";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, FileText, CheckCircle, XCircle, Clock, TrendingUp } from "lucide-react";
+import { Package, FileText, CheckCircle, XCircle, Clock, TrendingUp, Users, UserCheck, Shield } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { format } from "date-fns";
 
@@ -14,6 +14,7 @@ export default function Dashboard() {
   const { requests, isLoading: requestsLoading } = useRequests(
     role === "student" ? "own" : "all"
   );
+  const { data: adminStats, isLoading: adminStatsLoading } = useAdminStats();
 
   const stats = {
     totalComponents: components.length,
@@ -35,6 +36,56 @@ export default function Dashboard() {
             Welcome back! Here's an overview of your lab components.
           </p>
         </div>
+
+        {/* Admin-specific Stats */}
+        {role === "admin" && (
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card className="border-border/50 bg-gradient-to-br from-primary/10 to-background">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Students
+                </CardTitle>
+                <Users className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {adminStatsLoading ? "..." : adminStats?.totalStudents || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">Registered students</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50 bg-gradient-to-br from-success/10 to-background">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Staff
+                </CardTitle>
+                <UserCheck className="h-4 w-4 text-success" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {adminStatsLoading ? "..." : adminStats?.totalStaff || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">Active staff members</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50 bg-gradient-to-br from-warning/10 to-background">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Admins
+                </CardTitle>
+                <Shield className="h-4 w-4 text-warning" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {adminStatsLoading ? "..." : adminStats?.totalAdmins || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">System administrators</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

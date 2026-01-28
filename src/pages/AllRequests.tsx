@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileText, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { FileText, Loader2, CheckCircle, XCircle, User, Mail, Hash } from "lucide-react";
 import { format } from "date-fns";
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
@@ -115,14 +115,50 @@ export default function AllRequests() {
                         {request.component?.name || "Unknown Component"}
                       </CardTitle>
                       <CardDescription>
-                        Requested by {request.profile?.email || "Unknown"} on{" "}
-                        {format(new Date(request.created_at), "MMM d, yyyy 'at' h:mm a")}
+                        Submitted on {format(new Date(request.created_at), "MMM d, yyyy 'at' h:mm a")}
                       </CardDescription>
                     </div>
                     <StatusBadge status={request.status} />
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {/* Student Details Section */}
+                  <div className="mb-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+                      Student Information
+                    </h4>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Name</p>
+                          <p className="font-medium">
+                            {request.profile?.full_name || "Not provided"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Email</p>
+                          <p className="font-medium text-sm break-all">
+                            {request.profile?.email || "Unknown"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Hash className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Roll Number</p>
+                          <p className="font-medium">
+                            {request.profile?.roll_number || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Request Details */}
                   <div className="grid gap-4 sm:grid-cols-3 mb-4">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
@@ -202,6 +238,10 @@ export default function AllRequests() {
               <DialogDescription>
                 Are you sure you want to approve this request for{" "}
                 {selectedRequest?.quantity}x {selectedRequest?.component?.name}?
+                <br />
+                <span className="text-muted-foreground">
+                  Student: {selectedRequest?.profile?.full_name || selectedRequest?.profile?.email}
+                </span>
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -231,7 +271,8 @@ export default function AllRequests() {
             <DialogHeader>
               <DialogTitle>Reject Request</DialogTitle>
               <DialogDescription>
-                Please provide a reason for rejecting this request.
+                Please provide a reason for rejecting this request from{" "}
+                {selectedRequest?.profile?.full_name || selectedRequest?.profile?.email}.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
